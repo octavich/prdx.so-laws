@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Закон парахода — prdx.so</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05020a;
+    --ink:#ffffff;
+    --muted:#b9b4c9;
+    --violet:#7a3bff;
+    --magenta:#ff3ad1;
+    --amber:#ffb638;
+    --orange:#ff7a1a;
+    --cyan:#6ae3ff;
+    --chip:#15101f;
+    --line:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow:hidden}
+
+  /* ---- Deck ---- */
+  .deck{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .slide{
+    position:absolute;inset:0;
+    display:none;
+    padding:7vmin 8vmin;
+    opacity:0;transform:translateY(20px) scale(.995);
+    transition:opacity .5s ease, transform .5s ease;
+    overflow:hidden;
+  }
+  .slide.active{display:flex;opacity:1;transform:none;flex-direction:column;justify-content:center}
+
+  /* ---- Neon background ---- */
+  .bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.75;mix-blend-mode:screen}
+  .orb.v{background:radial-gradient(circle, #8a2bff 0%, transparent 60%);width:55vmin;height:55vmin;left:-10vmin;top:-10vmin}
+  .orb.m{background:radial-gradient(circle, #ff2bc1 0%, transparent 60%);width:60vmin;height:60vmin;right:-15vmin;top:10vmin}
+  .orb.a{background:radial-gradient(circle, #ff8a1a 0%, transparent 60%);width:70vmin;height:70vmin;left:10vmin;bottom:-25vmin}
+  .orb.c{background:radial-gradient(circle, #3a82ff 0%, transparent 60%);width:40vmin;height:40vmin;right:10vmin;bottom:-10vmin;opacity:.5}
+  .grid{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:80px 80px, 80px 80px;
+    mask-image:radial-gradient(circle at center, rgba(0,0,0,.9), transparent 75%);
+  }
+  .noise{position:absolute;inset:0;opacity:.04;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.7'/></svg>")}
+  .content{position:relative;z-index:2;max-width:1240px;margin:0 auto;width:100%}
+
+  /* ---- Type ---- */
+  h1,h2,h3,p,ul,ol{margin:0}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:14px;letter-spacing:.22em;text-transform:uppercase;
+    color:#fff;opacity:.7;padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,255,255,.02);backdrop-filter:blur(6px);
+  }
+  .eyebrow .dot{width:8px;height:8px;border-radius:50%;background:var(--magenta);box-shadow:0 0 12px var(--magenta)}
+  h1{font-weight:800;font-size:clamp(44px,8.5vmin,128px);line-height:.95;letter-spacing:-.02em;
+     text-shadow:0 0 40px rgba(255,255,255,.12)}
+  h2{font-weight:800;font-size:clamp(32px,5.5vmin,72px);line-height:1;letter-spacing:-.02em}
+  h3{font-weight:700;font-size:clamp(20px,2.6vmin,30px);letter-spacing:-.01em}
+  .lead{font-size:clamp(18px,2.3vmin,26px);color:var(--muted);max-width:60ch;line-height:1.45}
+  .kicker{font-size:clamp(16px,1.9vmin,22px);color:#fff;opacity:.85;max-width:75ch;line-height:1.55}
+  .grad{
+    background:linear-gradient(92deg,#fff 0%,#ffd1f0 30%,#d0b4ff 60%,#ffd09a 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .accent{color:var(--amber)}
+  .violet{color:#c9a7ff}
+  .mag{color:#ff8fdb}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  /* ---- Chrome: header, footer, progress, nav ---- */
+  .chrome-top{position:fixed;inset:22px 28px auto 28px;display:flex;justify-content:space-between;align-items:center;z-index:10;pointer-events:none}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:#fff;opacity:.85;pointer-events:auto}
+  .brand .mark{width:18px;height:18px;border-radius:4px;background:conic-gradient(from 180deg,#ff3ad1,#7a3bff,#ffb638,#ff3ad1);box-shadow:0 0 18px rgba(255,58,209,.6)}
+  .page{font-variant-numeric:tabular-nums;color:#fff;opacity:.7;font-size:12px;letter-spacing:.18em;pointer-events:auto}
+  .chrome-bottom{position:fixed;inset:auto 28px 22px 28px;display:flex;justify-content:space-between;align-items:center;z-index:10;color:#fff;opacity:.6;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+  .progress{position:fixed;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.06);z-index:11}
+  .progress>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--magenta),var(--violet),var(--amber));box-shadow:0 0 14px var(--magenta);transition:width .45s ease}
+  .nav{position:fixed;right:24px;bottom:40px;display:flex;gap:8px;z-index:12}
+  .nav button{
+    width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:#fff;cursor:pointer;font-size:18px;
+    backdrop-filter:blur(8px);transition:transform .15s ease, background .2s ease;
+  }
+  .nav button:hover{background:rgba(255,255,255,.08);transform:translateY(-1px)}
+
+  /* ---- Layouts ---- */
+  .stack{display:flex;flex-direction:column;gap:22px}
+  .row{display:flex;gap:22px;flex-wrap:wrap}
+  .two{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .four{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+  /* ---- Cards & chips ---- */
+  .card{
+    position:relative;padding:22px 22px;border-radius:18px;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+    border:1px solid var(--line);overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;
+    background:linear-gradient(140deg,rgba(255,58,209,.55),rgba(122,59,255,.4) 40%,transparent 70%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:.8;
+  }
+  .card h3{margin-bottom:8px}
+  .card p{color:var(--muted);line-height:1.55;font-size:15.5px}
+  .card .ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:16px;margin-bottom:12px;
+    background:linear-gradient(140deg,#ff3ad1,#7a3bff);color:#fff;box-shadow:0 8px 30px rgba(122,59,255,.35)}
+  .card.amber .ico{background:linear-gradient(140deg,#ffb638,#ff7a1a);box-shadow:0 8px 30px rgba(255,122,26,.35)}
+  .card.cyan .ico{background:linear-gradient(140deg,#6ae3ff,#7a3bff);box-shadow:0 8px 30px rgba(106,227,255,.25)}
+
+  .chips{display:flex;gap:10px;flex-wrap:wrap}
+  .chip{
+    padding:10px 14px;border-radius:999px;border:1px solid var(--line);
+    background:rgba(255,255,255,.03);color:#fff;font-size:14px;letter-spacing:.01em;
+  }
+  .chip.hot{border-color:rgba(255,58,209,.5);box-shadow:inset 0 0 0 1px rgba(255,58,209,.2),0 0 30px rgba(255,58,209,.15);color:#ffd6ef}
+  .chip.warn{border-color:rgba(255,182,56,.5);color:#ffe7b8}
+
+  .kvs{display:grid;grid-template-columns:1fr auto;gap:8px 24px;font-size:16px}
+  .kvs .k{color:var(--muted)}
+  .kvs .v{color:#fff;font-variant-numeric:tabular-nums}
+
+  .list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  .list li{position:relative;padding-left:22px;color:#eae6f3;font-size:16.5px;line-height:1.5}
+  .list li::before{
+    content:"";position:absolute;left:0;top:.65em;width:10px;height:10px;border-radius:2px;
+    background:linear-gradient(135deg,var(--magenta),var(--violet));box-shadow:0 0 14px rgba(255,58,209,.5);
+  }
+  .list.amber li::before{background:linear-gradient(135deg,var(--amber),var(--orange));box-shadow:0 0 14px rgba(255,122,26,.5)}
+
+  .bignum{font-weight:800;font-size:clamp(44px,8vmin,96px);line-height:.9;letter-spacing:-.03em;
+    background:linear-gradient(92deg,#fff,#ffd09a);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .label{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#fff;opacity:.55}
+
+  .pill-row{display:flex;gap:12px;flex-wrap:wrap}
+  .pill{
+    padding:14px 18px;border-radius:14px;background:rgba(255,255,255,.04);
+    border:1px solid var(--line);font-weight:600;font-size:15px;
+  }
+
+  /* Hero ribbon */
+  .ribbon{
+    display:inline-block;padding:8px 14px;border-radius:10px;
+    background:linear-gradient(90deg,var(--magenta),var(--violet));
+    color:#fff;font-weight:700;letter-spacing:.04em;box-shadow:0 10px 40px rgba(122,59,255,.35);
+  }
+
+  /* Section chapter cover */
+  .chapter{display:flex;flex-direction:column;gap:22px}
+  .chapter .no{font-weight:800;font-size:clamp(120px,22vmin,280px);line-height:.8;letter-spacing:-.05em;
+    background:linear-gradient(160deg,#ffb638 0%,#ff3ad1 35%,#7a3bff 70%, #ffffff 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 14px 60px rgba(255,58,209,.25));
+  }
+
+  /* Table of penalties */
+  .table{
+    width:100%;border-collapse:separate;border-spacing:0;
+    background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  }
+  .table th,.table td{padding:12px 16px;text-align:left;font-size:15px;border-bottom:1px solid var(--line)}
+  .table th{color:#fff;opacity:.7;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px}
+  .table tr:last-child td{border-bottom:0}
+  .table td.v{color:var(--amber);font-weight:700;white-space:nowrap}
+
+  /* final */
+  .final .big{font-size:clamp(56px,12vmin,180px);font-weight:800;line-height:.9;letter-spacing:-.03em}
+  .final .big span{display:block}
+  .final .sig{color:var(--muted);margin-top:18px;letter-spacing:.3em;text-transform:uppercase;font-size:12px}
+
+  @media (max-width:820px){
+    .two,.three,.four{grid-template-columns:1fr}
+    h1{font-size:56px}
+  }
+
+  /* Print */
+  @media print{
+    @page{size:1600px 900px;margin:0}
+    html,body{background:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{overflow:visible}
+    .chrome-top,.chrome-bottom,.nav,.progress{display:none !important}
+    .deck,.slide{position:relative;inset:auto}
+    .slide{display:flex !important;opacity:1 !important;transform:none !important;
+      width:1600px;height:900px;page-break-after:always;break-after:page}
+  }
+</style>
+</head>
+<body>
+
+<div class="chrome-top">
+  <div class="brand"><span class="mark"></span><span>prdx.so · закон парахода</span></div>
+  <div class="page"><span id="curr">01</span> / <span id="total">00</span></div>
+</div>
+
+<div class="deck" id="deck">
+  <!-- ========== 1. COVER ========== -->
+  <section class="slide active" data-title="Обложка">
+    <div class="bg">
+      <div class="grid"></div>
+      <div class="orb v"></div><div class="orb m"></div><div class="orb a"></div><div class="orb c"></div>
+      <div class="noise"></div>
+    </div>
+    <div class="content">
+      <span class="eyebrow"><span class="dot"></span>Второй сезон · действующее право</span>
+      <h1 class="grad" style="margin-top:22px">Закон<br/>парахода</h1>
+      <p class="lead" style="margin-top:26px">Конституция, кодексы и практика prdx.so — собранные в одну презентацию. Коротко, по делу, для граждан, адвокатов, сотрудников Интерпола и министров.</p>
+      <div class="pill-row" style="margin-top:32px">
+        <span class="ribbon">prdx.so · действующая редакция</span>
+        <span class="pill">Конституция</span>
+        <span class="pill">УАК</span>
+        <span class="pill">ПК</span>
+        <span class="pill">СК</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 2. СИСТЕМА ========== -->
+  <section class="slide" data-title="Система законов">
+    <div class="bg"><div class="grid"></div><div class="orb v"></div><div class="orb m"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>01 · Иерархия</span>
+      <h2>Что главнее чего<br/><span class="grad">в системе prdx.so</span></h2>
+      <div class="three" style="margin-top:16px">
+        <div class="card">
+          <div class="ico">1</div>
+          <h3>Конституция</h3>
+          <p>Высшая юридическая сила. Ни один акт не может ей противоречить.</p>
+        </div>
+        <div class="card amber">
+          <div class="ico">2</div>
+          <h3>Федеральные кодексы и законы</h3>
+          <p>УАК, Процессуальный Кодекс, Судебный Кодекс и профильные ФЗ.</p>
+        </div>
+        <div class="card cyan">
+          <div class="ico">3</div>
+          <h3>Подзаконные акты</h3>
+          <p>Указы, постановления, регламенты. Не могут противоречить вышестоящим.</p>
+        </div>
+      </div>
+      <div class="chips" style="margin-top:10px">
+        <span class="chip hot">Конституция</span>
+        <span class="chip">УАК</span>
+        <span class="chip">Процессуальный Кодекс</span>
+        <span class="chip">Судебный Кодекс</span>
+        <span class="chip">ФЗ о Парламенте, МКО и Совете Общин</span>
+        <span class="chip">ФЗ о Президенте и Правительстве</span>
+        <span class="chip">ФЗ об адвокатуре</span>
+        <span class="chip">ФЗ о выборах и референдуме</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 3. КОНСТИТУЦИЯ ========== -->
+  <section class="slide" data-title="Конституция">
+    <div class="bg"><div class="grid"></div><div class="orb m"></div><div class="orb a"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>02 · Конституция</span>
+      <h2>Основы<br/><span class="grad">конституционного строя</span></h2>
+      <div class="two" style="margin-top:10px">
+        <ul class="list">
+          <li>Человек, его права и свободы — высшая ценность.</li>
+          <li>Носитель суверенитета и единственный источник власти — народ prdx.so.</li>
+          <li>Высшее выражение власти народа — <span class="mag">референдум</span> и <span class="mag">свободные выборы</span>.</li>
+          <li>Разделение властей: законодательная, исполнительная, судебная.</li>
+          <li>Признаются и защищаются частная, государственная и региональная формы собственности.</li>
+          <li>prdx.so — светское государство, политическое многообразие гарантировано.</li>
+        </ul>
+        <div class="card">
+          <div class="label">Поправки к Конституции</div>
+          <h3 style="margin-top:8px">Только через референдум</h3>
+          <p>На референдум выносится полный текст поправки. После официальной публикации текст нельзя изменить до подведения итогов. Принято — если «за» большинство участников.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 4. ПРАВА И ОБЯЗАННОСТИ ========== -->
+  <section class="slide" data-title="Права и обязанности">
+    <div class="bg"><div class="grid"></div><div class="orb v"></div><div class="orb c"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>03 · Гражданин</span>
+      <h2>Права<span class="accent"> и </span>обязанности</h2>
+      <div class="two">
+        <div class="card">
+          <div class="label">У тебя есть право</div>
+          <ul class="list" style="margin-top:12px">
+            <li>на жизнь, достоинство, неприкосновенность</li>
+            <li>на неприкосновенность частной жизни и жилища</li>
+            <li>на судебную защиту и помощь адвоката</li>
+            <li>на участие в выборах и референдуме</li>
+            <li>на имущество и его защиту</li>
+            <li>на защиту от незаконных действий власти</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <div class="label">Ты обязан</div>
+          <ul class="list amber" style="margin-top:12px">
+            <li>соблюдать Конституцию и законы</li>
+            <li>не нарушать права других лиц</li>
+            <li>платить налоги и сборы</li>
+            <li>исполнять решения суда</li>
+            <li>не препятствовать Интерполу и суду при законных действиях</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 5. ВЛАСТЬ ========== -->
+  <section class="slide" data-title="Устройство власти">
+    <div class="bg"><div class="grid"></div><div class="orb v"></div><div class="orb m"></div><div class="orb a"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>04 · Власть</span>
+      <h2>Три ветви,<br/><span class="grad">одна система</span></h2>
+      <div class="three">
+        <div class="card">
+          <div class="ico">П</div>
+          <h3>Президент</h3>
+          <p>Глава государства, руководит Правительством, издаёт указы, назначает министров, избирается гражданами.</p>
+        </div>
+        <div class="card cyan">
+          <div class="ico">М</div>
+          <h3>Парламент</h3>
+          <p><b>МКО</b> — палата депутатов. <b>Совет Общин</b> — сенаторы от Республик. Ведёт заседания Председатель парламента.</p>
+        </div>
+        <div class="card amber">
+          <div class="ico">С</div>
+          <h3>Суд</h3>
+          <p>Единственный осуществляет правосудие. Судьи независимы и подчиняются только Конституции и закону.</p>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:8px">Председатель парламента руководит парламентской ветвью, но <span class="mag">не управляет министерствами</span> и не осуществляет исполнительную власть.</p>
+    </div>
+  </section>
+
+  <!-- ========== 6. МИНИСТЕРСТВА ========== -->
+  <section class="slide" data-title="Министерства">
+    <div class="bg"><div class="grid"></div><div class="orb a"></div><div class="orb m"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>05 · Исполнительная власть</span>
+      <h2>Действующие <span class="grad">министерства</span></h2>
+      <div class="four">
+        <div class="card">
+          <div class="ico">₽</div>
+          <h3>Минфин</h3>
+          <p>Бюджет, госбанк, учёт средств, финансовые правила, прозрачность расходов.</p>
+        </div>
+        <div class="card cyan">
+          <div class="ico">♪</div>
+          <h3>Минкульт</h3>
+          <p>Культурные мероприятия, официальные ивенты, поддержка и согласование событий.</p>
+        </div>
+        <div class="card amber">
+          <div class="ico">◆</div>
+          <h3>Интерпол</h3>
+          <p>Пресечение нарушений, порядок, задержания, внесудебные штрафы, исполнение ордеров.</p>
+        </div>
+        <div class="card">
+          <div class="ico">⚒</div>
+          <h3>Минифра</h3>
+          <p>Госстройки, инфраструктура, техправила, содержание объектов.</p>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:8px">Каждое министерство действует строго в пределах своих полномочий. Вторжение в чужую компетенцию запрещено.</p>
+    </div>
+  </section>
+
+  <!-- ========== 7. ВЫБОРЫ ========== -->
+  <section class="slide" data-title="Выборы и референдум">
+    <div class="bg"><div class="grid"></div><div class="orb v"></div><div class="orb c"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>06 · Народовластие</span>
+      <h2>Выборы и <span class="grad">референдум</span></h2>
+      <div class="two">
+        <div>
+          <h3 style="opacity:.8;margin-bottom:10px" class="label">Выборы должны быть</h3>
+          <div class="chips">
+            <span class="chip">всеобщими</span>
+            <span class="chip">равными</span>
+            <span class="chip">прямыми</span>
+            <span class="chip">свободными</span>
+            <span class="chip">тайными</span>
+          </div>
+          <h3 style="opacity:.8;margin:22px 0 10px" class="label">Нельзя</h3>
+          <ul class="list">
+            <li>подкупать избирателей</li>
+            <li>давить и принуждать голосовать</li>
+            <li>фальсифицировать результаты</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label">Что избирается</div>
+          <ul class="list" style="margin-top:10px">
+            <li>Президент</li>
+            <li>Депутаты МКО</li>
+            <li>Верховный Судья</li>
+            <li>Председатель парламента — в специальном порядке</li>
+          </ul>
+          <p style="margin-top:14px;color:var(--muted)">Референдум — прямое голосование граждан по важному вопросу. Поправки в Конституцию принимаются именно так.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 8. АДВОКАТУРА ========== -->
+  <section class="slide" data-title="Адвокатура">
+    <div class="bg"><div class="grid"></div><div class="orb m"></div><div class="orb a"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>07 · Защита</span>
+      <h2>Адвокат<span class="accent"> рядом</span></h2>
+      <div class="two">
+        <ul class="list">
+          <li>защищает доверителя и представляет его интересы</li>
+          <li>может участвовать в суде и процессуальных действиях</li>
+          <li>обязан хранить адвокатскую тайну</li>
+          <li>не вправе мешать правосудию или подделывать доказательства</li>
+        </ul>
+        <div class="card">
+          <div class="label">Важно</div>
+          <p style="margin-top:10px;color:#fff">Полноценной государственной адвокатуры пока нет — действует частная адвокатская деятельность.</p>
+          <p style="margin-top:10px">Суд может привлечь частного адвоката к бесплатной помощи, но <span class="mag">только стороне защиты</span> и только по одобренному ходатайству.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 9. СУД ========== -->
+  <section class="slide" data-title="Суд">
+    <div class="bg"><div class="grid"></div><div class="orb v"></div><div class="orb m"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>08 · Судебный кодекс</span>
+      <h2>Правосудие<br/><span class="grad">осуществляет только суд</span></h2>
+      <div class="three">
+        <div class="card">
+          <h3>Что рассматривает</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>гражданские споры</li>
+            <li>административные споры</li>
+            <li>уголовные дела</li>
+            <li>жалобы на действия власти</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>Принципы</h3>
+          <ul class="list amber" style="margin-top:10px">
+            <li>независимость судей</li>
+            <li>подчинение только Конституции и закону</li>
+            <li>запрет конфликта интересов</li>
+          </ul>
+        </div>
+        <div class="card cyan">
+          <h3>Ходатайства</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>о вызове лиц и доказательствах</li>
+            <li>о переносе заседания</li>
+            <li>о предоставлении адвоката</li>
+            <li>об отводе</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 10. ПРОЦЕСС ========== -->
+  <section class="slide" data-title="Процессуальный кодекс">
+    <div class="bg"><div class="grid"></div><div class="orb a"></div><div class="orb m"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>09 · Процессуальный кодекс</span>
+      <h2>Как <span class="grad">разбирают нарушение</span></h2>
+      <div class="two">
+        <div>
+          <h3 class="label">Начало производства</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>Интерпол сам увидел нарушение</li>
+            <li>поступил вызов</li>
+            <li>есть скрины, видео, <span class="mono">CoreProtect</span></li>
+          </ul>
+          <h3 class="label" style="margin-top:22px">На практике</h3>
+          <ul class="list amber" style="margin-top:10px">
+            <li>на ЗТ — прежде всего <span class="mono">CoreProtect</span></li>
+            <li>подтвердил — мера; не подтвердил — меры нет</li>
+            <li>в ЗЗ — по наблюдению или по вызову</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label">Задержание</div>
+          <ul class="list" style="margin-top:10px">
+            <li>начинается с надевания наручников</li>
+            <li>применяется только для обеспечения безопасности</li>
+            <li>если не буйный и не опасный — наручники нельзя</li>
+            <li>обязательна <span class="mag">Миранда</span> и видеофиксация ≥ 72 ч</li>
+            <li>после исчезновения угрозы — прекратить</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 11. МИРАНДА ========== -->
+  <section class="slide" data-title="Правило Миранды">
+    <div class="bg"><div class="grid"></div><div class="orb m"></div><div class="orb v"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>10 · Права задержанного</span>
+      <h2>Правило <span class="grad">Миранды</span></h2>
+      <div class="three" style="margin-top:10px">
+        <div class="card">
+          <div class="bignum">01</div>
+          <h3 style="margin-top:10px">Молчи</h3>
+          <p>Ты имеешь право не отвечать на вопросы.</p>
+        </div>
+        <div class="card amber">
+          <div class="bignum">02</div>
+          <h3 style="margin-top:10px">Учти</h3>
+          <p>Всё сказанное может быть использовано против тебя.</p>
+        </div>
+        <div class="card cyan">
+          <div class="bignum">03</div>
+          <h3 style="margin-top:10px">Знай основание</h3>
+          <p>Тебе обязаны назвать конкретное основание задержания.</p>
+        </div>
+      </div>
+      <p class="kicker" style="margin-top:6px">Если Интерпол не может объективно установить виновность — он <span class="mag">не выносит решение по существу</span> и направляет стороны в суд.</p>
+    </div>
+  </section>
+
+  <!-- ========== 12. УАК СТРУКТУРА ========== -->
+  <section class="slide" data-title="УАК · структура">
+    <div class="bg"><div class="grid"></div><div class="orb a"></div><div class="orb v"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>11 · Уголовно-административный кодекс</span>
+      <h2>Структура <span class="grad">УАК</span></h2>
+      <div class="three">
+        <div class="card">
+          <div class="label">Раздел I</div>
+          <h3 style="margin-top:8px">Общие положения</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>термины</li>
+            <li>понятие преступления</li>
+            <li>соучастие</li>
+            <li>исключающие обстоятельства</li>
+            <li>назначение наказания</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <div class="label">Раздел II</div>
+          <h3 style="margin-top:8px">Подведомственно Интерполу и Суду</h3>
+          <ul class="list amber" style="margin-top:10px">
+            <li>жизнь и здоровье</li>
+            <li>собственность</li>
+            <li>экономическая деятельность</li>
+            <li>общественная безопасность</li>
+            <li>здоровье населения и нравственность</li>
+          </ul>
+        </div>
+        <div class="card cyan">
+          <div class="label">Раздел III</div>
+          <h3 style="margin-top:8px">Только Суд</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>свобода, честь, достоинство</li>
+            <li>конституционные права</li>
+            <li>основы строя и безопасность</li>
+            <li>против власти и правосудия</li>
+            <li>порядок управления</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 13. УАК ТЕРМИНЫ ========== -->
+  <section class="slide" data-title="УАК · термины">
+    <div class="bg"><div class="grid"></div><div class="orb m"></div><div class="orb c"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>12 · Ключевые термины</span>
+      <h2>Коротко, но <span class="grad">точно</span></h2>
+      <div class="four">
+        <div class="card">
+          <div class="label">Ст. 1.1</div>
+          <h3 style="margin-top:6px">ЗЗ</h3>
+          <p>Зелёная зона. Спавн, Хаб, центр Энда, безопасные территории.</p>
+        </div>
+        <div class="card amber">
+          <div class="label">Ст. 1.2</div>
+          <h3 style="margin-top:6px">ЗТ</h3>
+          <p>Закрытая территория игрока, общины, Республики. Уходи по первому требованию.</p>
+        </div>
+        <div class="card cyan">
+          <div class="label">Ст. 1.3</div>
+          <h3 style="margin-top:6px">Госимущество</h3>
+          <p>Недвижимое — всегда под режимом ЗЗ. Движимое охраняется как госимущество.</p>
+        </div>
+        <div class="card">
+          <div class="label">Ст. 1.4</div>
+          <h3 style="margin-top:6px">Офиц. ивент</h3>
+          <p>Поддержан Минкультом и объявлен в канале «Ивенты».</p>
+        </div>
+        <div class="card cyan">
+          <div class="label">Ст. 1.5</div>
+          <h3 style="margin-top:6px">Представитель власти</h3>
+          <p>Лицо с властными, контрольными или правоохранительными полномочиями.</p>
+        </div>
+        <div class="card amber">
+          <div class="label">Ст. 1.6</div>
+          <h3 style="margin-top:6px">Значит. ущерб</h3>
+          <p>Существенный имущественный или организационный вред.</p>
+        </div>
+        <div class="card">
+          <div class="label">Ст. 1.7</div>
+          <h3 style="margin-top:6px">Рецидив</h3>
+          <p>Повтор в пределах той же главы в течение <span class="mag">14 дней</span>.</p>
+        </div>
+        <div class="card amber">
+          <div class="label">Ст. 5.5</div>
+          <h3 style="margin-top:6px">Неоднозначность</h3>
+          <p>Недостаточно данных → дело уходит в Суд.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 14. НАКАЗАНИЯ ========== -->
+  <section class="slide" data-title="Наказания">
+    <div class="bg"><div class="grid"></div><div class="orb a"></div><div class="orb m"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>13 · Глава 5 УАК</span>
+      <h2>Назначение <span class="grad">наказания</span></h2>
+      <div class="two">
+        <div>
+          <h3 class="label">Основные меры</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>штраф в алмазах</li>
+            <li>компенсация имущественного ущерба</li>
+            <li>красный варн «Угроза государству»</li>
+            <li>исправительные работы на стройке Минифры</li>
+            <li>в исключительных случаях — лишение гражданства (бан)</li>
+          </ul>
+          <h3 class="label" style="margin-top:22px">Усиление</h3>
+          <ul class="list amber" style="margin-top:10px">
+            <li>особо тяжкое деяние — до ×2 максимума</li>
+            <li>рецидив — до двукратного максимума по статье</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="label">Интерпол на месте</div>
+          <p style="margin-top:10px">Штраф на месте — только если нарушение очевидно, не требует оценки и не является неоднозначным.</p>
+          <p style="margin-top:10px">Иначе — передача в Суд. Решение Интерпола всегда можно <span class="mag">обжаловать</span>.</p>
+          <div class="chips" style="margin-top:16px">
+            <span class="chip warn">смягчающие</span>
+            <span class="chip warn">отягчающие</span>
+            <span class="chip warn">возмещение ущерба</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 15. НАЛОГИ ========== -->
+  <section class="slide" data-title="Налоги и пошлины">
+    <div class="bg"><div class="grid"></div><div class="orb c"></div><div class="orb a"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>14 · Памятка Минфина</span>
+      <h2>Налоги, сборы, <span class="grad">пошлины</span></h2>
+      <div class="two">
+        <table class="table">
+          <thead><tr><th>Платёж</th><th>Размер</th></tr></thead>
+          <tbody>
+            <tr><td>Торговля на спавне (разово)</td><td class="v">48 💎</td></tr>
+            <tr><td>Подача иска в СПИ</td><td class="v">12 💎</td></tr>
+            <tr><td>Апелляция / кассация в ВС</td><td class="v">24 💎</td></tr>
+            <tr><td>Толкование норм / Конституции</td><td class="v">16 💎</td></tr>
+            <tr><td>Пошлина за законопроект в МКО</td><td class="v">12 💎</td></tr>
+          </tbody>
+        </table>
+        <div class="card">
+          <div class="label">Судебные штрафы за нарушение порядка</div>
+          <div class="kvs" style="margin-top:12px">
+            <div class="k">Граждане</div><div class="v">до 24 💎</div>
+            <div class="k">Госслужащие</div><div class="v">до 64 💎</div>
+            <div class="k">Организации и главы структур</div><div class="v">до 256 💎</div>
+            <div class="k">Моральный вред (при удовлетворении иска)</div><div class="v">12–128 💎</div>
+          </div>
+          <p style="margin-top:14px;color:var(--muted)">Цены могут корректироваться постановлениями Правительства или Минфина.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 16. ПАМЯТКИ ========== -->
+  <section class="slide" data-title="Памятки">
+    <div class="bg"><div class="grid"></div><div class="orb m"></div><div class="orb v"></div><div class="orb a"></div><div class="noise"></div></div>
+    <div class="content stack">
+      <span class="eyebrow"><span class="dot"></span>15 · Коротко о главном</span>
+      <h2>Памятки<br/><span class="grad">на каждый день</span></h2>
+      <div class="three">
+        <div class="card">
+          <h3>Гражданину</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>не лезь на ЗТ, уходи по первому требованию</li>
+            <li>не трогай госимущество</li>
+            <li>не мешай официальным мероприятиям</li>
+            <li>сохраняй скрины, если ты потерпевший</li>
+            <li>спор неоднозначен — в суд</li>
+          </ul>
+        </div>
+        <div class="card amber">
+          <h3>Сотруднику Интерпола</h3>
+          <ul class="list amber" style="margin-top:10px">
+            <li>ты не суд и не подменяешь его</li>
+            <li>на ЗТ — <span class="mono">CoreProtect</span></li>
+            <li>наручники — только при реальной угрозе</li>
+            <li>Миранда и видеофиксация обязательны</li>
+            <li>неоднозначность → направляй в суд</li>
+          </ul>
+        </div>
+        <div class="card cyan">
+          <h3>Министру / чиновнику</h3>
+          <ul class="list" style="margin-top:10px">
+            <li>полномочия ограничены законом</li>
+            <li>не лезь в чужую компетенцию</li>
+            <li>парламентские запросы игнорировать нельзя</li>
+            <li>превышение, халатность, давление — преступления</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 17. FINAL ========== -->
+  <section class="slide final" data-title="Финал">
+    <div class="bg">
+      <div class="grid"></div>
+      <div class="orb v"></div><div class="orb m"></div><div class="orb a"></div>
+      <div class="noise"></div>
+    </div>
+    <div class="content">
+      <span class="eyebrow"><span class="dot"></span>Финал</span>
+      <div class="big grad" style="margin-top:18px">
+        <span>Закон —</span>
+        <span>это правила,</span>
+        <span>по которым</span>
+        <span>живёт парахода.</span>
+      </div>
+      <div class="sig">prdx.so · второй сезон · действующая редакция</div>
+    </div>
+  </section>
+</div>
+
+<div class="chrome-bottom">
+  <div>← → · space · колесо · F — фуллскрин</div>
+  <div id="slideTitle">Обложка</div>
+</div>
+
+<div class="progress"><span id="prog"></span></div>
+
+<div class="nav">
+  <button id="prev" title="Назад">‹</button>
+  <button id="next" title="Вперёд">›</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  const curr = document.getElementById('curr');
+  const totalEl = document.getElementById('total');
+  const prog = document.getElementById('prog');
+  const title = document.getElementById('slideTitle');
+  totalEl.textContent = String(total).padStart(2,'0');
+
+  let i = 0, locked = false;
+  function show(n){
+    n = Math.max(0, Math.min(total-1, n));
+    if(n===i) return;
+    slides[i].classList.remove('active');
+    i = n;
+    slides[i].classList.add('active');
+    curr.textContent = String(i+1).padStart(2,'0');
+    prog.style.width = ((i)/(total-1)*100) + '%';
+    title.textContent = slides[i].dataset.title || '';
+  }
+  show(0); prog.style.width = '0%';
+
+  document.getElementById('prev').onclick = ()=> show(i-1);
+  document.getElementById('next').onclick = ()=> show(i+1);
+
+  window.addEventListener('keydown', e=>{
+    if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); show(i+1); }
+    else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); show(i-1); }
+    else if(e.key==='Home'){ show(0); }
+    else if(e.key==='End'){ show(total-1); }
+    else if(e.key==='f' || e.key==='F'){
+      if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  let wheelT=0;
+  window.addEventListener('wheel', e=>{
+    const now = Date.now();
+    if(now-wheelT < 650) return;
+    if(Math.abs(e.deltaY) < 20) return;
+    wheelT = now;
+    show(i + (e.deltaY>0?1:-1));
+  }, {passive:true});
+
+  // swipe
+  let tx=0;
+  window.addEventListener('touchstart', e=> tx = e.changedTouches[0].clientX);
+  window.addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - tx;
+    if(Math.abs(dx)>40) show(i + (dx<0?1:-1));
+  });
+</script>
+</body>
+</html>
